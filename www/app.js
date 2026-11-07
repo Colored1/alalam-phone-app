@@ -1,5 +1,5 @@
 // ===== إعدادات =====
-const API = "https://alalam-phone.onrender.com";
+const API = "https://alalam-phone1-0-ftc9.onrender.com";
 const TOKEN_KEY = "alalam_token";
 
 const $ = (id) => document.getElementById(id);
