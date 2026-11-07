@@ -3,6 +3,8 @@
   "appName": "العالم فون",
   "webDir": "www",
   "server": {
+    "url": "https://alalam-phone.onrender.com",
+    "cleartext": false,
     "androidScheme": "https"
   }
 }
