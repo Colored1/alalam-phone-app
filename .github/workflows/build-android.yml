@@ -29,6 +29,7 @@ jobs:
       - name: Create Android project
         run: |
           npx cap add android
+          npx @capacitor/assets generate --android --assetPath resources --iconBackgroundColor '#0a0806' --iconBackgroundColorDark '#0a0806' --splashBackgroundColor '#0a0806' --splashBackgroundColorDark '#0a0806'
           npx cap sync android
 
       - name: Build debug APK

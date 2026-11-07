@@ -2,67 +2,125 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0b0907">
   <title>العالم فون</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- شاشة البداية -->
+  <!-- ===== شاشة البداية ===== -->
   <div id="splash">
-    <div class="splash-globe">
-      <img src="assets/logo.png" alt="العالم فون">
-    </div>
+    <div class="orb"></div>
+    <img class="splash-logo" src="assets/logo.png" alt="">
+    <div class="splash-title">العالم فون</div>
     <div class="splash-bar"><span></span></div>
   </div>
 
-  <!-- التطبيق الرئيسي -->
-  <main id="app" class="hidden">
-    <header class="topbar">
-      <img src="assets/logo.png" alt="" class="top-logo">
-      <div>
-        <h1>العالم فون</h1>
-        <p>إدارة كروت النت</p>
-      </div>
-    </header>
+  <!-- ===== تسجيل الدخول ===== -->
+  <section id="login" class="screen hidden">
+    <div class="orb"></div>
+    <div class="login-card">
+      <img class="login-logo" src="assets/logo.png" alt="">
+      <h1>مرحباً بك</h1>
+      <p class="muted">سجّل الدخول لإدارة المحل</p>
+      <form id="login-form">
+        <label class="field">
+          <span>اسم المستخدم</span>
+          <input id="login-user" autocomplete="username" required>
+        </label>
+        <label class="field">
+          <span>كلمة السر</span>
+          <input id="login-pass" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="login-error" class="error hidden"></p>
+        <button class="btn-primary" type="submit"><span>دخول</span></button>
+      </form>
+    </div>
+  </section>
 
-    <section class="stats">
-      <div class="stat-card">
-        <span id="stat-total">0</span>
-        <small>إجمالي الكروت</small>
+  <!-- ===== التطبيق ===== -->
+  <div id="app" class="hidden">
+    <!-- الرئيسية -->
+    <section class="view active" data-view="home">
+      <header class="hero">
+        <div>
+          <p class="muted" id="greeting">مرحباً</p>
+          <h1>لوحة التحكم</h1>
+        </div>
+        <img class="hero-logo" src="assets/logo.png" alt="">
+      </header>
+
+      <div class="hero-card">
+        <p>مبيعات اليوم</p>
+        <div class="big"><span id="today-total">0</span> <small>ريال</small></div>
+        <div class="row-sm">
+          <span>عدد الفواتير: <b id="today-count">0</b></span>
+          <span>المحصّل: <b id="today-paid">0</b></span>
+        </div>
       </div>
-      <div class="stat-card">
-        <span id="stat-sold">0</span>
-        <small>مباعة</small>
+
+      <div class="grid-2">
+        <div class="mini glass">
+          <small>ذمم لنا</small>
+          <b id="debts-rec">0</b>
+        </div>
+        <div class="mini glass">
+          <small>ذمم علينا</small>
+          <b id="debts-pay">0</b>
+        </div>
       </div>
-      <div class="stat-card gold">
-        <span id="stat-left">0</span>
-        <small>متبقية</small>
+
+      <div class="actions">
+        <button class="action glass" data-go="sell"><i>🧾</i><span>بيع كروت</span></button>
+        <button class="action glass" data-go="cards"><i>🎫</i><span>الفئات</span></button>
+        <button class="action glass" data-go="sales"><i>📊</i><span>الفواتير</span></button>
       </div>
     </section>
 
-    <section class="panel">
-      <h2>إضافة كروت جديدة</h2>
-      <form id="add-form" class="row">
-        <input id="card-code" type="text" placeholder="كود الكرت" required>
+    <!-- الفئات -->
+    <section class="view" data-view="cards">
+      <header class="head"><h1>فئات الكروت</h1></header>
+      <form id="card-form" class="glass form-row">
+        <input id="card-name" placeholder="اسم الفئة" required>
+        <input id="card-face" type="number" min="1" placeholder="القيمة" required>
         <input id="card-price" type="number" min="0" placeholder="السعر" required>
-        <button type="submit">إضافة</button>
+        <button class="btn-primary small" type="submit"><span>إضافة</span></button>
+      </form>
+      <div id="card-list" class="stack"></div>
+    </section>
+
+    <!-- البيع -->
+    <section class="view" data-view="sell">
+      <header class="head"><h1>بيع كروت</h1></header>
+      <form id="sell-form" class="glass sell-form">
+        <label class="field"><span>الفئة</span><select id="sell-type" required></select></label>
+        <label class="field"><span>الكمية</span><input id="sell-qty" type="number" min="1" value="1" required></label>
+        <label class="field"><span>السعر للكرت</span><input id="sell-price" type="number" min="0" required></label>
+        <label class="field"><span>اسم الزبون (اختياري)</span><input id="sell-customer"></label>
+        <label class="field"><span>المبلغ المدفوع</span><input id="sell-paid" type="number" min="0" value="0" required></label>
+        <div class="total-box"><span>الإجمالي</span><b id="sell-total">0</b></div>
+        <p id="sell-error" class="error hidden"></p>
+        <button class="btn-primary" type="submit"><span>تسجيل البيع</span></button>
       </form>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2>الكروت</h2>
-        <div class="filters">
-          <button class="chip active" data-filter="all">الكل</button>
-          <button class="chip" data-filter="available">متاحة</button>
-          <button class="chip" data-filter="sold">مباعة</button>
-        </div>
-      </div>
-      <ul id="card-list"></ul>
-      <p id="empty" class="empty hidden">لا توجد كروت بعد</p>
+    <!-- الفواتير -->
+    <section class="view" data-view="sales">
+      <header class="head"><h1>الفواتير</h1></header>
+      <div id="sales-list" class="stack"></div>
     </section>
-  </main>
 
+    <!-- شريط التنقل -->
+    <nav class="tabbar">
+      <button class="tab active" data-go="home"><i>🏠</i><span>الرئيسية</span></button>
+      <button class="tab" data-go="sell"><i>🧾</i><span>بيع</span></button>
+      <button class="tab" data-go="cards"><i>🎫</i><span>الفئات</span></button>
+      <button class="tab" data-go="sales"><i>📊</i><span>الفواتير</span></button>
+      <button class="tab" id="logout-btn"><i>⎋</i><span>خروج</span></button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast"></div>
   <script src="app.js"></script>
 </body>
 </html>

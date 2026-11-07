@@ -2,9 +2,8 @@
   "appId": "com.alalamphone.app",
   "appName": "العالم فون",
   "webDir": "www",
-  "server": {
-    "url": "https://alalam-phone.onrender.com",
-    "cleartext": false,
-    "androidScheme": "https"
+  "backgroundColor": "#0a0806",
+  "android": {
+    "backgroundColor": "#0a0806"
   }
 }

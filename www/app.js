@@ -1,145 +1,293 @@
-// ===== قاعدة البيانات المحلية (داخل الجهاز) =====
-const DB_KEY = "alalam_cards_v2";
+// ===== إعدادات =====
+const API = "https://alalam-phone.onrender.com";
+const TOKEN_KEY = "alalam_token";
 
-function loadCards() {
-  try {
-    return JSON.parse(localStorage.getItem(DB_KEY)) || [];
-  } catch (e) {
-    return [];
+const $ = (id) => document.getElementById(id);
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let cardTypes = [];
+
+// ===== الاتصال بالسيرفر =====
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(API + path, { ...options, headers });
+  let data = {};
+  try { data = await res.json(); } catch (e) { /* ردّ فارغ */ }
+  if (res.status === 401 && path !== "/api/login") {
+    logout(true);
+    throw new Error("انتهت الجلسة، سجّل الدخول من جديد");
   }
+  if (!res.ok) throw new Error(data.error || "حدث خطأ، حاول مرة أخرى");
+  return data;
 }
 
-function saveCards(cards) {
-  localStorage.setItem(DB_KEY, JSON.stringify(cards));
+// ===== أدوات مساعدة =====
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 2600);
 }
 
-let cards = loadCards();
-let currentFilter = "all";
+const fmt = (n) => Number(n || 0).toLocaleString("en-US");
 
-// ===== عناصر الواجهة =====
-const listEl = document.getElementById("card-list");
-const emptyEl = document.getElementById("empty");
-const form = document.getElementById("add-form");
-const codeInput = document.getElementById("card-code");
-const priceInput = document.getElementById("card-price");
-
-// ===== الإحصائيات =====
-function updateStats() {
-  const total = cards.length;
-  const sold = cards.filter(c => c.sold).length;
-  animateNumber("stat-total", total);
-  animateNumber("stat-sold", sold);
-  animateNumber("stat-left", total - sold);
-}
-
-function animateNumber(id, target) {
-  const el = document.getElementById(id);
-  const start = parseInt(el.textContent, 10) || 0;
-  const steps = 20;
+function animateNumber(el, target) {
+  const start = parseFloat(el.dataset.value || "0") || 0;
+  el.dataset.value = target;
+  const steps = 24;
   let i = 0;
   const timer = setInterval(() => {
     i++;
-    el.textContent = Math.round(start + ((target - start) * i) / steps);
+    el.textContent = fmt(Math.round(start + ((target - start) * i) / steps));
     if (i >= steps) clearInterval(timer);
-  }, 25);
+  }, 22);
 }
 
-// ===== عرض القائمة =====
-function render() {
-  const visible = cards.filter(c => {
-    if (currentFilter === "sold") return c.sold;
-    if (currentFilter === "available") return !c.sold;
-    return true;
-  });
-
-  listEl.innerHTML = "";
-  emptyEl.classList.toggle("hidden", visible.length > 0);
-
-  visible.forEach((card, index) => {
-    const li = document.createElement("li");
-    li.className = "card-item";
-    li.style.animationDelay = `${index * 40}ms`;
-    li.innerHTML = `
-      <div>
-        <div class="code"></div>
-        <div class="price"></div>
-      </div>
-      <div class="actions"></div>
-    `;
-    li.querySelector(".code").textContent = card.code;
-    li.querySelector(".price").textContent = `${card.price} ريال`;
-
-    const right = li.querySelector(".actions");
-    const badge = document.createElement("span");
-    badge.className = `badge ${card.sold ? "sold" : "available"}`;
-    badge.textContent = card.sold ? "مباعة" : "متاحة";
-    right.appendChild(badge);
-
-    const toggle = document.createElement("button");
-    toggle.className = "item-btn";
-    toggle.style.marginInlineStart = "8px";
-    toggle.textContent = card.sold ? "استرجاع" : "بيع";
-    toggle.onclick = () => toggleSold(card.id);
-    right.appendChild(toggle);
-
-    const del = document.createElement("button");
-    del.className = "item-btn";
-    del.style.marginInlineStart = "6px";
-    del.textContent = "حذف";
-    del.onclick = () => removeCard(card.id);
-    right.appendChild(del);
-
-    listEl.appendChild(li);
-  });
-
-  updateStats();
+function greet() {
+  const h = new Date().getHours();
+  $("greeting").textContent = h < 12 ? "صباح الخير" : h < 18 ? "مساء الخير" : "مساء النور";
 }
 
-// ===== العمليات =====
-function toggleSold(id) {
-  cards = cards.map(c => (c.id === id ? { ...c, sold: !c.sold } : c));
-  saveCards(cards);
-  render();
+// ===== التنقل بين الصفحات =====
+function go(view) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.dataset.view === view));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.go === view));
+  if (view === "home") loadHome();
+  if (view === "cards") loadCards();
+  if (view === "sell") loadSellForm();
+  if (view === "sales") loadSales();
 }
 
-function removeCard(id) {
-  if (!confirm("هل تريد حذف هذا الكرت؟")) return;
-  cards = cards.filter(c => c.id !== id);
-  saveCards(cards);
-  render();
+document.querySelectorAll("[data-go]").forEach((el) => {
+  el.addEventListener("click", () => go(el.dataset.go));
+});
+
+// ===== الرئيسية =====
+async function loadHome() {
+  try {
+    const r = await api("/api/reports/summary");
+    animateNumber($("today-total"), r.sales.total);
+    animateNumber($("today-count"), r.sales.count);
+    animateNumber($("today-paid"), r.sales.paid);
+    animateNumber($("debts-rec"), r.debts.receivable);
+    animateNumber($("debts-pay"), r.debts.payable);
+  } catch (e) {
+    toast(e.message);
+  }
 }
 
-form.addEventListener("submit", e => {
+// ===== الفئات =====
+async function loadCards() {
+  try {
+    cardTypes = await api("/api/cards");
+    const list = $("card-list");
+    list.innerHTML = "";
+    if (!cardTypes.length) list.innerHTML = '<p class="empty">لا توجد فئات بعد</p>';
+    cardTypes.forEach((c, i) => {
+      const el = document.createElement("div");
+      el.className = "item";
+      el.style.animationDelay = `${i * 50}ms`;
+      el.innerHTML = `
+        <div>
+          <div class="title"></div>
+          <div class="sub"></div>
+        </div>
+        <div class="amount"></div>`;
+      el.querySelector(".title").textContent = c.name;
+      el.querySelector(".sub").textContent = `القيمة ${fmt(c.face_value)}`;
+      el.querySelector(".amount").textContent = `${fmt(c.default_price)} ريال`;
+      el.onclick = () => editPrice(c);
+      list.appendChild(el);
+    });
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function editPrice(card) {
+  const value = prompt(`سعر ${card.name} الجديد:`, card.default_price);
+  if (value === null || value.trim() === "") return;
+  try {
+    await api(`/api/cards/${card.id}`, { method: "PATCH", body: JSON.stringify({ default_price: Number(value) }) });
+    toast("تم تحديث السعر");
+    loadCards();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+$("card-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const code = codeInput.value.trim();
-  const price = Number(priceInput.value);
-  if (!code) return;
-
-  cards.unshift({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    code,
-    price,
-    sold: false,
-    createdAt: new Date().toISOString()
-  });
-  saveCards(cards);
-  codeInput.value = "";
-  priceInput.value = "";
-  codeInput.focus();
-  render();
+  try {
+    await api("/api/cards", {
+      method: "POST",
+      body: JSON.stringify({
+        name: $("card-name").value.trim(),
+        face_value: Number($("card-face").value),
+        default_price: Number($("card-price").value)
+      })
+    });
+    e.target.reset();
+    toast("تمت إضافة الفئة");
+    loadCards();
+  } catch (err) {
+    toast(err.message);
+  }
 });
 
-document.querySelectorAll(".chip").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    currentFilter = btn.dataset.filter;
-    render();
-  });
+// ===== البيع =====
+async function loadSellForm() {
+  try {
+    cardTypes = await api("/api/cards");
+    const sel = $("sell-type");
+    sel.innerHTML = "";
+    cardTypes.forEach((c) => {
+      const o = document.createElement("option");
+      o.value = c.id;
+      o.textContent = `${c.name} — ${fmt(c.default_price)} ريال`;
+      sel.appendChild(o);
+    });
+    fillPriceFromType();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+function fillPriceFromType() {
+  const c = cardTypes.find((x) => String(x.id) === $("sell-type").value);
+  if (c) $("sell-price").value = c.default_price;
+  updateTotal();
+}
+
+function updateTotal() {
+  const total = (Number($("sell-qty").value) || 0) * (Number($("sell-price").value) || 0);
+  const el = $("sell-total");
+  el.textContent = fmt(total);
+  el.classList.remove("bump");
+  void el.offsetWidth;
+  el.classList.add("bump");
+  setTimeout(() => el.classList.remove("bump"), 200);
+  return total;
+}
+
+$("sell-type").addEventListener("change", fillPriceFromType);
+["sell-qty", "sell-price"].forEach((id) => $(id).addEventListener("input", updateTotal));
+
+$("sell-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const total = updateTotal();
+  const paid = Number($("sell-paid").value) || 0;
+  const err = $("sell-error");
+  err.classList.add("hidden");
+  try {
+    const sale = await api("/api/sales", {
+      method: "POST",
+      body: JSON.stringify({
+        items: [{
+          item_type: "card",
+          item_ref: Number($("sell-type").value),
+          quantity: Number($("sell-qty").value),
+          unit_price: Number($("sell-price").value)
+        }],
+        paid,
+        customer_name: $("sell-customer").value.trim() || null
+      })
+    });
+    toast(`تم البيع — فاتورة ${sale.invoice_no || ""}`.trim());
+    $("sell-qty").value = 1;
+    $("sell-paid").value = 0;
+    $("sell-customer").value = "";
+    updateTotal();
+    go("home");
+  } catch (e2) {
+    err.textContent = e2.message;
+    err.classList.remove("hidden");
+  }
 });
 
-// ===== بدء التطبيق بعد شاشة البداية =====
+// ===== الفواتير =====
+async function loadSales() {
+  try {
+    const sales = await api("/api/sales");
+    const list = $("sales-list");
+    list.innerHTML = "";
+    if (!sales.length) list.innerHTML = '<p class="empty">لا توجد فواتير بعد</p>';
+    sales.slice(0, 80).forEach((s, i) => {
+      const el = document.createElement("div");
+      el.className = "item";
+      el.style.animationDelay = `${i * 30}ms`;
+      el.innerHTML = `
+        <div>
+          <div class="title"></div>
+          <div class="sub"></div>
+        </div>
+        <div style="text-align:left">
+          <div class="amount"></div>
+          <span class="chip"></span>
+        </div>`;
+      el.querySelector(".title").textContent = s.customer_name || "زبون نقدي";
+      el.querySelector(".sub").textContent = `${s.invoice_no} • ${(s.created_at || "").slice(0, 16)}`;
+      el.querySelector(".amount").textContent = `${fmt(s.total)} ريال`;
+      const remaining = Number(s.total) - Number(s.paid);
+      el.querySelector(".chip").textContent = remaining > 0 ? `متبقي ${fmt(remaining)}` : "مدفوعة";
+      list.appendChild(el);
+    });
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+// ===== الدخول والخروج =====
+function showApp() {
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  greet();
+  go("home");
+}
+
+function showLogin() {
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+}
+
+function logout(silent) {
+  token = "";
+  localStorage.removeItem(TOKEN_KEY);
+  if (!silent) toast("تم تسجيل الخروج");
+  showLogin();
+}
+
+$("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("login-error");
+  err.classList.add("hidden");
+  try {
+    const res = await fetch(API + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: $("login-user").value, password: $("login-pass").value })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.token) throw new Error(data.error || "فشل تسجيل الدخول");
+    token = data.token;
+    localStorage.setItem(TOKEN_KEY, token);
+    $("login-pass").value = "";
+    showApp();
+  } catch (x) {
+    err.textContent = x.message === "Failed to fetch" ? "تعذّر الاتصال بالسيرفر، تحقق من الإنترنت" : x.message;
+    err.classList.remove("hidden");
+  }
+});
+
+$("logout-btn").addEventListener("click", () => {
+  fetch(API + "/api/logout", { method: "POST" }).catch(() => {});
+  logout(false);
+});
+
+// ===== بدء التطبيق =====
 setTimeout(() => {
-  document.getElementById("app").classList.remove("hidden");
-  render();
-}, 2600);
+  $("splash").style.display = "none";
+  if (token) showApp();
+  else showLogin();
+}, 2800);
