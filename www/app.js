@@ -490,12 +490,24 @@ function todayISO() {
   return new Date().toLocaleDateString("en-CA");
 }
 
+let reportType = "full";
+let lastReport = null;
+
+document.querySelectorAll("[data-rtype]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-rtype]").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    reportType = btn.dataset.rtype;
+    loadReport();
+  });
+});
+
 async function loadReport() {
   if (!$("r-from").value) $("r-from").value = todayISO();
   if (!$("r-to").value) $("r-to").value = todayISO();
   try {
     const r = await api(`/api/reports/summary?from=${$("r-from").value}&to=${$("r-to").value}`);
-    const rows = [
+    const all = [
       ["عدد الفواتير", fmt(r.sales.count)],
       ["إجمالي المبيعات", `${fmt(r.sales.total)} ريال`],
       ["المحصّل", `${fmt(r.sales.paid)} ريال`],
@@ -506,11 +518,32 @@ async function loadReport() {
       ["ذمم لنا (إجمالي)", `${fmt(r.debts.receivable)} ريال`],
       ["ذمم علينا (إجمالي)", `${fmt(r.debts.payable)} ريال`]
     ];
+    const pick = {
+      full: all,
+      cards: all.filter(([k]) => /الكروت|الفواتير|المدفوع|المحصّل|إجمالي المبيعات/.test(k)),
+      products: all.filter(([k]) => /المنتجات|المصاريف/.test(k))
+    };
+    const rows = pick[reportType];
+    lastReport = { rows, from: $("r-from").value, to: $("r-to").value, type: reportType };
     const box = $("report-box");
     box.innerHTML = "";
     rows.forEach(([k, v], i) => box.appendChild(listItem(k, "", v, i)));
   } catch (e) { toast(e.message); }
 }
+
+$("r-pdf").addEventListener("click", async () => {
+  if (!lastReport) await loadReport();
+  if (!lastReport) return;
+  const names = { full: "تقرير كامل", cards: "تقرير الكروت", products: "تقرير المنتجات" };
+  const title = names[lastReport.type];
+  try {
+    toast("جارٍ تجهيز PDF...");
+    const b64 = await htmlToPdfBase64(reportHtml(title, lastReport.from, lastReport.to, lastReport.rows));
+    await sharePdf(`report-${lastReport.type}-${lastReport.from}.pdf`, b64, `${title} (${lastReport.from} - ${lastReport.to})`);
+  } catch (err) {
+    if (err && err.name !== "AbortError") toast("تعذّر تجهيز الملف: " + err.message);
+  }
+});
 
 $("r-show").addEventListener("click", loadReport);
 
@@ -618,15 +651,11 @@ $("inv-delete").addEventListener("click", async () => {
 });
 
 $("inv-share").addEventListener("click", async () => {
-  const text = invoiceText(currentInvoice);
   try {
-    if (navigator.share) {
-      await navigator.share({ title: currentInvoice.invoice_no, text });
-    } else {
-      await navigator.clipboard.writeText(text);
-      toast("تم نسخ تفاصيل الفاتورة");
-    }
+    toast("جارٍ تجهيز الملف...");
+    const b64 = await htmlToPdfBase64(invoiceHtml(currentInvoice));
+    await sharePdf(`invoice-${currentInvoice.invoice_no}.pdf`, b64, `فاتورة ${currentInvoice.invoice_no}`);
   } catch (err) {
-    if (err && err.name !== "AbortError") toast("تعذّرت المشاركة");
+    if (err && err.name !== "AbortError") toast("تعذّر تجهيز الملف: " + err.message);
   }
 });

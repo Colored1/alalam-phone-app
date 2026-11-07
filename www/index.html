@@ -171,12 +171,18 @@
     <!-- التقارير -->
     <section class="view" data-view="reports">
       <header class="head"><h1>التقارير</h1></header>
+      <div class="filters">
+        <button class="chip active" data-rtype="full">تقرير كامل</button>
+        <button class="chip" data-rtype="cards">الكروت</button>
+        <button class="chip" data-rtype="products">المنتجات</button>
+      </div>
       <div class="glass form-row">
         <label class="field"><span>من تاريخ</span><input id="r-from" type="date"></label>
         <label class="field"><span>إلى تاريخ</span><input id="r-to" type="date"></label>
         <button class="btn-primary small" id="r-show"><span>عرض التقرير</span></button>
       </div>
       <div id="report-box" class="stack"></div>
+      <button class="btn-primary" id="r-pdf" style="margin-top:14px"><span>حفظ ومشاركة PDF</span></button>
     </section>
 
     <!-- الحقوق -->
@@ -235,13 +241,16 @@
       </form>
       <div class="modal-actions">
         <button class="btn-primary small" id="inv-edit-btn"><span>تعديل</span></button>
-        <button class="mini-btn" id="inv-share">مشاركة</button>
+        <button class="mini-btn" id="inv-share">مشاركة PDF</button>
         <button class="mini-btn danger" id="inv-delete">حذف</button>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="pdf.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
