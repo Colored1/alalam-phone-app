@@ -110,13 +110,95 @@
       <div id="sales-list" class="stack"></div>
     </section>
 
+    <!-- المنتجات -->
+    <section class="view" data-view="products">
+      <header class="head"><h1>المنتجات</h1></header>
+      <form id="product-form" class="glass form-row">
+        <input id="p-name" placeholder="اسم المنتج" required>
+        <input id="p-sku" placeholder="الرمز (اختياري)">
+        <input id="p-cost" type="number" min="0" placeholder="سعر التكلفة" required>
+        <input id="p-sell" type="number" min="0" placeholder="سعر البيع" required>
+        <input id="p-stock" type="number" min="0" placeholder="الكمية في المخزن" required>
+        <button class="btn-primary small" type="submit"><span>إضافة منتج</span></button>
+      </form>
+      <div id="product-list" class="stack"></div>
+    </section>
+
+    <!-- الزبائن -->
+    <section class="view" data-view="customers">
+      <header class="head"><h1>الزبائن</h1></header>
+      <form id="customer-form" class="glass form-row">
+        <input id="c-name" placeholder="اسم الزبون" required>
+        <input id="c-phone" placeholder="الهاتف (اختياري)">
+        <button class="btn-primary small" type="submit"><span>إضافة زبون</span></button>
+      </form>
+      <div id="customer-list" class="stack"></div>
+    </section>
+
+    <!-- الديون -->
+    <section class="view" data-view="debts">
+      <header class="head"><h1>الديون</h1></header>
+      <div class="filters">
+        <button class="chip active" data-dir="receivable">ذمم لنا</button>
+        <button class="chip" data-dir="payable">ذمم علينا</button>
+      </div>
+      <form id="debt-form" class="glass form-row">
+        <input id="d-person" placeholder="اسم الشخص" required>
+        <input id="d-reason" placeholder="السبب" required>
+        <input id="d-amount" type="number" min="1" placeholder="المبلغ" required>
+        <input id="d-paid" type="number" min="0" placeholder="المدفوع عند التسجيل (اختياري)">
+        <select id="d-direction">
+          <option value="receivable">لنا (عليه)</option>
+          <option value="payable">علينا (لديه)</option>
+        </select>
+        <button class="btn-primary small" type="submit"><span>تسجيل الدين</span></button>
+      </form>
+      <div id="debt-list" class="stack"></div>
+    </section>
+
+    <!-- المصاريف -->
+    <section class="view" data-view="expenses">
+      <header class="head"><h1>المصاريف</h1></header>
+      <form id="expense-form" class="glass form-row">
+        <input id="e-desc" placeholder="وصف المصروف" required>
+        <input id="e-amount" type="number" min="1" placeholder="المبلغ" required>
+        <input id="e-category" placeholder="التصنيف (مثلاً: إيجار)">
+        <button class="btn-primary small" type="submit"><span>إضافة مصروف</span></button>
+      </form>
+      <div id="expense-list" class="stack"></div>
+    </section>
+
+    <!-- التقارير -->
+    <section class="view" data-view="reports">
+      <header class="head"><h1>التقارير</h1></header>
+      <div class="glass form-row">
+        <label class="field"><span>من تاريخ</span><input id="r-from" type="date"></label>
+        <label class="field"><span>إلى تاريخ</span><input id="r-to" type="date"></label>
+        <button class="btn-primary small" id="r-show"><span>عرض التقرير</span></button>
+      </div>
+      <div id="report-box" class="stack"></div>
+    </section>
+
+    <!-- المزيد -->
+    <section class="view" data-view="more">
+      <header class="head"><h1>المزيد</h1></header>
+      <div class="grid-2">
+        <button class="action glass" data-go="products"><i>📦</i><span>المنتجات</span></button>
+        <button class="action glass" data-go="customers"><i>👥</i><span>الزبائن</span></button>
+        <button class="action glass" data-go="debts"><i>🤝</i><span>الديون</span></button>
+        <button class="action glass" data-go="expenses"><i>💸</i><span>المصاريف</span></button>
+        <button class="action glass" data-go="reports"><i>📈</i><span>التقارير</span></button>
+        <button class="action glass" id="logout-btn"><i>⎋</i><span>خروج</span></button>
+      </div>
+    </section>
+
     <!-- شريط التنقل -->
     <nav class="tabbar">
       <button class="tab active" data-go="home"><i>🏠</i><span>الرئيسية</span></button>
       <button class="tab" data-go="sell"><i>🧾</i><span>بيع</span></button>
       <button class="tab" data-go="cards"><i>🎫</i><span>الفئات</span></button>
       <button class="tab" data-go="sales"><i>📊</i><span>الفواتير</span></button>
-      <button class="tab" id="logout-btn"><i>⎋</i><span>خروج</span></button>
+      <button class="tab" data-go="more"><i>☰</i><span>المزيد</span></button>
     </nav>
   </div>
 

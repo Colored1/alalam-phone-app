@@ -57,6 +57,11 @@ function go(view) {
   if (view === "cards") loadCards();
   if (view === "sell") loadSellForm();
   if (view === "sales") loadSales();
+  if (view === "products") loadProducts();
+  if (view === "customers") loadCustomers();
+  if (view === "debts") loadDebts();
+  if (view === "expenses") loadExpenses();
+  if (view === "reports") loadReport();
 }
 
 document.querySelectorAll("[data-go]").forEach((el) => {
@@ -284,6 +289,229 @@ $("logout-btn").addEventListener("click", () => {
   fetch(API + "/api/logout", { method: "POST" }).catch(() => {});
   logout(false);
 });
+
+// ===== أدوات مشتركة للقوائم =====
+function listItem(title, sub, amountText, index) {
+  const el = document.createElement("div");
+  el.className = "item";
+  el.style.animationDelay = `${index * 40}ms`;
+  el.innerHTML = `<div><div class="title"></div><div class="sub"></div></div><div class="side"></div>`;
+  el.querySelector(".title").textContent = title;
+  el.querySelector(".sub").textContent = sub;
+  if (amountText !== undefined) {
+    const a = document.createElement("div");
+    a.className = "amount";
+    a.textContent = amountText;
+    el.querySelector(".side").appendChild(a);
+  }
+  return el;
+}
+
+function addButton(parent, label, onClick, danger) {
+  const b = document.createElement("button");
+  b.className = "mini-btn" + (danger ? " danger" : "");
+  b.textContent = label;
+  b.onclick = (e) => { e.stopPropagation(); onClick(); };
+  parent.appendChild(b);
+  return b;
+}
+
+function emptyState(listEl, count) {
+  if (!count) listEl.innerHTML = '<p class="empty">لا توجد بيانات بعد</p>';
+}
+
+// ===== المنتجات =====
+async function loadProducts() {
+  try {
+    const items = await api("/api/products");
+    const list = $("product-list");
+    list.innerHTML = "";
+    emptyState(list, items.length);
+    items.forEach((p, i) => {
+      const el = listItem(p.name, `المخزون ${fmt(p.stock)}${p.sku ? " • " + p.sku : ""}`, `${fmt(p.sell_price)} ريال`, i);
+      addButton(el.querySelector(".side"), "حذف", () => deleteProduct(p.id), true);
+      list.appendChild(el);
+    });
+  } catch (e) { toast(e.message); }
+}
+
+async function deleteProduct(id) {
+  if (!confirm("حذف هذا المنتج؟")) return;
+  try {
+    await api(`/api/products/${id}`, { method: "DELETE" });
+    toast("تم الحذف");
+    loadProducts();
+  } catch (e) { toast(e.message); }
+}
+
+$("product-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/products", {
+      method: "POST",
+      body: JSON.stringify({
+        name: $("p-name").value.trim(),
+        sku: $("p-sku").value.trim(),
+        cost_price: Number($("p-cost").value),
+        sell_price: Number($("p-sell").value),
+        stock: Number($("p-stock").value)
+      })
+    });
+    e.target.reset();
+    toast("تمت إضافة المنتج");
+    loadProducts();
+  } catch (err) { toast(err.message); }
+});
+
+// ===== الزبائن =====
+async function loadCustomers() {
+  try {
+    const items = await api("/api/customers");
+    const list = $("customer-list");
+    list.innerHTML = "";
+    emptyState(list, items.length);
+    items.forEach((c, i) => list.appendChild(listItem(c.name, c.phone || "بدون هاتف", undefined, i)));
+  } catch (e) { toast(e.message); }
+}
+
+$("customer-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/customers", {
+      method: "POST",
+      body: JSON.stringify({ name: $("c-name").value.trim(), phone: $("c-phone").value.trim() || null })
+    });
+    e.target.reset();
+    toast("تمت إضافة الزبون");
+    loadCustomers();
+  } catch (err) { toast(err.message); }
+});
+
+// ===== الديون =====
+let debtDirection = "receivable";
+
+async function loadDebts() {
+  try {
+    const items = await api(`/api/debts?direction=${debtDirection}&status=open`);
+    const list = $("debt-list");
+    list.innerHTML = "";
+    emptyState(list, items.length);
+    items.forEach((d, i) => {
+      const el = listItem(d.person_name, `${d.reason} • متبقي ${fmt(d.remaining)} من ${fmt(d.amount)}`, undefined, i);
+      addButton(el.querySelector(".side"), "تسديد", () => payDebt(d), false);
+      list.appendChild(el);
+    });
+  } catch (e) { toast(e.message); }
+}
+
+async function payDebt(debt) {
+  const value = prompt(`مبلغ التسديد (المتبقي ${debt.remaining}):`);
+  if (value === null || value.trim() === "") return;
+  try {
+    await api(`/api/debts/${debt.id}/payments`, { method: "POST", body: JSON.stringify({ amount: Number(value) }) });
+    toast("تم تسجيل التسديد");
+    loadDebts();
+  } catch (e) { toast(e.message); }
+}
+
+document.querySelectorAll("[data-dir]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-dir]").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    debtDirection = btn.dataset.dir;
+    $("d-direction").value = debtDirection;
+    loadDebts();
+  });
+});
+
+$("debt-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/debts", {
+      method: "POST",
+      body: JSON.stringify({
+        person_name: $("d-person").value.trim(),
+        reason: $("d-reason").value.trim(),
+        amount: Number($("d-amount").value),
+        paid_amount: $("d-paid").value || 0,
+        direction: $("d-direction").value
+      })
+    });
+    e.target.reset();
+    toast("تم تسجيل الدين");
+    loadDebts();
+  } catch (err) { toast(err.message); }
+});
+
+// ===== المصاريف =====
+async function loadExpenses() {
+  try {
+    const items = await api("/api/expenses");
+    const list = $("expense-list");
+    list.innerHTML = "";
+    emptyState(list, items.length);
+    items.slice(0, 100).forEach((x, i) => {
+      const el = listItem(x.description, `${x.category} • ${(x.created_at || "").slice(0, 16)}`, `${fmt(x.amount)} ريال`, i);
+      addButton(el.querySelector(".side"), "حذف", () => deleteExpense(x.id), true);
+      list.appendChild(el);
+    });
+  } catch (e) { toast(e.message); }
+}
+
+async function deleteExpense(id) {
+  if (!confirm("حذف هذا المصروف؟")) return;
+  try {
+    await api(`/api/expenses/${id}`, { method: "DELETE" });
+    toast("تم الحذف");
+    loadExpenses();
+  } catch (e) { toast(e.message); }
+}
+
+$("expense-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/expenses", {
+      method: "POST",
+      body: JSON.stringify({
+        description: $("e-desc").value.trim(),
+        amount: Number($("e-amount").value),
+        category: $("e-category").value.trim() || "other"
+      })
+    });
+    e.target.reset();
+    toast("تمت إضافة المصروف");
+    loadExpenses();
+  } catch (err) { toast(err.message); }
+});
+
+// ===== التقارير =====
+function todayISO() {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+async function loadReport() {
+  if (!$("r-from").value) $("r-from").value = todayISO();
+  if (!$("r-to").value) $("r-to").value = todayISO();
+  try {
+    const r = await api(`/api/reports/summary?from=${$("r-from").value}&to=${$("r-to").value}`);
+    const rows = [
+      ["عدد الفواتير", fmt(r.sales.count)],
+      ["إجمالي المبيعات", `${fmt(r.sales.total)} ريال`],
+      ["المحصّل", `${fmt(r.sales.paid)} ريال`],
+      ["مبيعات الكروت", `${fmt(r.sales.cards_total)} ريال`],
+      ["مبيعات المنتجات", `${fmt(r.sales.products_total)} ريال`],
+      ["ربح المنتجات", `${fmt(r.sales.products_profit)} ريال`],
+      ["المصاريف", `${fmt(r.expenses.total)} ريال`],
+      ["ذمم لنا (إجمالي)", `${fmt(r.debts.receivable)} ريال`],
+      ["ذمم علينا (إجمالي)", `${fmt(r.debts.payable)} ريال`]
+    ];
+    const box = $("report-box");
+    box.innerHTML = "";
+    rows.forEach(([k, v], i) => box.appendChild(listItem(k, "", v, i)));
+  } catch (e) { toast(e.message); }
+}
+
+$("r-show").addEventListener("click", loadReport);
 
 // ===== بدء التطبيق =====
 setTimeout(() => {

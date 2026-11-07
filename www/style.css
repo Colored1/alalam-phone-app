@@ -212,3 +212,13 @@ select option { background: #15110c; }
 .toast.show { transform: translate(-50%, 0); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== إضافات الصفحات الجديدة ===== */
+.filters { display: flex; gap: 8px; margin-bottom: 12px; }
+.chip { cursor: pointer; padding: 8px 14px; border: 1px solid var(--glass-border); background: transparent; color: var(--muted-text); border-radius: 999px; transition: all .25s; }
+.chip.active { background: linear-gradient(135deg, var(--gold-1), var(--gold-3)); color: #1b1307; border-color: transparent; font-weight: 700; }
+.item .side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.mini-btn { padding: 7px 12px; font-size: 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(232,207,147,.1); color: var(--gold-1); cursor: pointer; }
+.mini-btn.danger { color: var(--danger); background: rgba(232,154,154,.08); }
+.mini-btn:active { transform: scale(.95); }
+label.field { display: grid; gap: 6px; }
