@@ -92,16 +92,20 @@
     <!-- البيع -->
     <section class="view" data-view="sell">
       <header class="head"><h1>بيع كروت</h1></header>
-      <form id="sell-form" class="glass sell-form">
-        <label class="field"><span>الفئة</span><select id="sell-type" required></select></label>
-        <label class="field"><span>الكمية</span><input id="sell-qty" type="number" min="1" value="1" required></label>
-        <label class="field"><span>السعر للكرت</span><input id="sell-price" type="number" min="0" required></label>
-        <label class="field"><span>اسم الزبون (اختياري)</span><input id="sell-customer"></label>
-        <label class="field"><span>المبلغ المدفوع</span><input id="sell-paid" type="number" min="0" value="0" required></label>
+      <div class="glass sell-form">
+        <div class="row-sm-form">
+          <label class="field grow"><span>الفئة</span><select id="sell-type"></select></label>
+          <label class="field qty"><span>الكمية</span><input id="sell-qty" type="number" min="1" value="1"></label>
+          <label class="field price"><span>السعر</span><input id="sell-price" type="number" min="0"></label>
+        </div>
+        <button type="button" class="mini-btn add-line" id="sell-add">+ إضافة للفاتورة</button>
+        <div id="sell-lines" class="stack"></div>
         <div class="total-box"><span>الإجمالي</span><b id="sell-total">0</b></div>
+        <label class="field"><span>اسم الزبون (اختياري)</span><input id="sell-customer"></label>
+        <label class="field"><span>المبلغ المدفوع</span><input id="sell-paid" type="number" min="0" value="0"></label>
         <p id="sell-error" class="error hidden"></p>
-        <button class="btn-primary" type="submit"><span>تسجيل البيع</span></button>
-      </form>
+        <button class="btn-primary" type="button" id="sell-submit"><span>تسجيل البيع</span></button>
+      </div>
     </section>
 
     <!-- الفواتير -->

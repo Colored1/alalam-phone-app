@@ -141,7 +141,9 @@ $("card-form").addEventListener("submit", async (e) => {
   }
 });
 
-// ===== البيع =====
+// ===== البيع (فواتير متعددة الفئات) =====
+let lines = [];
+
 async function loadSellForm() {
   try {
     cardTypes = await api("/api/cards");
@@ -154,6 +156,7 @@ async function loadSellForm() {
       sel.appendChild(o);
     });
     fillPriceFromType();
+    renderLines();
   } catch (e) {
     toast(e.message);
   }
@@ -162,48 +165,70 @@ async function loadSellForm() {
 function fillPriceFromType() {
   const c = cardTypes.find((x) => String(x.id) === $("sell-type").value);
   if (c) $("sell-price").value = c.default_price;
-  updateTotal();
 }
 
-function updateTotal() {
-  const total = (Number($("sell-qty").value) || 0) * (Number($("sell-price").value) || 0);
-  const el = $("sell-total");
-  el.textContent = fmt(total);
-  el.classList.remove("bump");
-  void el.offsetWidth;
-  el.classList.add("bump");
-  setTimeout(() => el.classList.remove("bump"), 200);
-  return total;
+function lineTotal() {
+  return lines.reduce((sum, l) => sum + l.quantity * l.unit_price, 0);
+}
+
+function renderLines() {
+  const box = $("sell-lines");
+  box.innerHTML = "";
+  lines.forEach((l, i) => {
+    const el = document.createElement("div");
+    el.className = "line-item";
+    el.innerHTML = `<div><div class="lt"></div><div class="ls"></div></div><div class="lp"></div>`;
+    el.querySelector(".lt").textContent = l.name;
+    el.querySelector(".ls").textContent = `${l.quantity} × ${fmt(l.unit_price)} ريال`;
+    el.querySelector(".lp").textContent = `${fmt(l.quantity * l.unit_price)} ريال`;
+    const del = document.createElement("button");
+    del.className = "mini-btn danger";
+    del.textContent = "حذف";
+    del.onclick = () => { lines.splice(i, 1); renderLines(); };
+    el.appendChild(del);
+    box.appendChild(el);
+  });
+  $("sell-total").textContent = fmt(lineTotal());
 }
 
 $("sell-type").addEventListener("change", fillPriceFromType);
-["sell-qty", "sell-price"].forEach((id) => $(id).addEventListener("input", updateTotal));
 
-$("sell-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const total = updateTotal();
-  const paid = Number($("sell-paid").value) || 0;
+$("sell-add").addEventListener("click", () => {
+  const card = cardTypes.find((x) => String(x.id) === $("sell-type").value);
+  const quantity = Number($("sell-qty").value);
+  const unit_price = Number($("sell-price").value);
+  if (!card || !(quantity > 0) || !(unit_price >= 0)) {
+    toast("تحقق من الفئة والكمية والسعر");
+    return;
+  }
+  lines.push({ id: card.id, name: card.name, quantity, unit_price });
+  $("sell-qty").value = 1;
+  fillPriceFromType();
+  renderLines();
+});
+
+$("sell-submit").addEventListener("click", async () => {
   const err = $("sell-error");
   err.classList.add("hidden");
+  if (!lines.length) {
+    err.textContent = "أضف فئة واحدة على الأقل للفاتورة";
+    err.classList.remove("hidden");
+    return;
+  }
   try {
     const sale = await api("/api/sales", {
       method: "POST",
       body: JSON.stringify({
-        items: [{
-          item_type: "card",
-          item_ref: Number($("sell-type").value),
-          quantity: Number($("sell-qty").value),
-          unit_price: Number($("sell-price").value)
-        }],
-        paid,
+        items: lines.map(l => ({ item_type: "card", item_ref: l.id, quantity: l.quantity, unit_price: l.unit_price })),
+        paid: Number($("sell-paid").value) || 0,
         customer_name: $("sell-customer").value.trim() || null
       })
     });
     toast(`تم البيع — فاتورة ${sale.invoice_no || ""}`.trim());
-    $("sell-qty").value = 1;
+    lines = [];
     $("sell-paid").value = 0;
     $("sell-customer").value = "";
-    updateTotal();
+    renderLines();
     go("home");
   } catch (e2) {
     err.textContent = e2.message;

@@ -242,3 +242,14 @@ label.field { display: grid; gap: 6px; }
 .inv-line b { color: var(--gold-1); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sheetUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+
+/* ===== بيع متعدد الفئات ===== */
+.row-sm-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.row-sm-form .grow { flex: 2; min-width: 130px; }
+.row-sm-form .qty { flex: 0 0 80px; }
+.row-sm-form .price { flex: 0 0 100px; }
+.add-line { width: 100%; padding: 12px; }
+.line-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px; border-radius: 16px; background: rgba(0,0,0,.3); border: 1px solid var(--glass-border); animation: rise .35s both; }
+.line-item .lt { font-weight: 700; }
+.line-item .ls { font-size: 12px; color: var(--muted-text); margin-top: 3px; }
+.line-item .lp { color: var(--gold-1); font-weight: 800; }
