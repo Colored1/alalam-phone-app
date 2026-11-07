@@ -222,3 +222,11 @@ select option { background: #15110c; }
 .mini-btn.danger { color: var(--danger); background: rgba(232,154,154,.08); }
 .mini-btn:active { transform: scale(.95); }
 label.field { display: grid; gap: 6px; }
+
+/* ===== صفحة الحقوق ===== */
+.credit-card { padding: 26px 20px; text-align: center; display: grid; gap: 10px; justify-items: center; animation: rise .6s both; }
+.credit-card h2 { font-size: 16px; color: var(--gold-1); }
+.credit-name { font-size: 22px; font-weight: 800; }
+.social { display: grid; gap: 10px; width: 100%; margin-top: 8px; }
+.social a { display: block; padding: 13px; border-radius: 14px; text-decoration: none; color: var(--gold-0); background: rgba(232,207,147,.08); border: 1px solid var(--glass-border); }
+.small-note { font-size: 12px; margin-top: 8px; }
