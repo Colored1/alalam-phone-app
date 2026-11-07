@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>العالم فون</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- شاشة البداية -->
+  <div id="splash">
+    <div class="splash-globe">
+      <img src="assets/logo.png" alt="العالم فون">
+    </div>
+    <div class="splash-bar"><span></span></div>
+  </div>
+
+  <!-- التطبيق الرئيسي -->
+  <main id="app" class="hidden">
+    <header class="topbar">
+      <img src="assets/logo.png" alt="" class="top-logo">
+      <div>
+        <h1>العالم فون</h1>
+        <p>إدارة كروت النت</p>
+      </div>
+    </header>
+
+    <section class="stats">
+      <div class="stat-card">
+        <span id="stat-total">0</span>
+        <small>إجمالي الكروت</small>
+      </div>
+      <div class="stat-card">
+        <span id="stat-sold">0</span>
+        <small>مباعة</small>
+      </div>
+      <div class="stat-card gold">
+        <span id="stat-left">0</span>
+        <small>متبقية</small>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>إضافة كروت جديدة</h2>
+      <form id="add-form" class="row">
+        <input id="card-code" type="text" placeholder="كود الكرت" required>
+        <input id="card-price" type="number" min="0" placeholder="السعر" required>
+        <button type="submit">إضافة</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>الكروت</h2>
+        <div class="filters">
+          <button class="chip active" data-filter="all">الكل</button>
+          <button class="chip" data-filter="available">متاحة</button>
+          <button class="chip" data-filter="sold">مباعة</button>
+        </div>
+      </div>
+      <ul id="card-list"></ul>
+      <p id="empty" class="empty hidden">لا توجد كروت بعد</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
