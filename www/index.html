@@ -219,6 +219,28 @@
     </nav>
   </div>
 
+  <!-- تفاصيل الفاتورة -->
+  <div id="invoice-modal" class="modal hidden">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>تفاصيل الفاتورة</h2>
+        <button class="mini-btn" id="inv-close">إغلاق</button>
+      </div>
+      <div id="inv-body" class="stack"></div>
+      <form id="inv-edit" class="stack hidden">
+        <label class="field"><span>اسم الزبون</span><input id="inv-customer"></label>
+        <label class="field"><span>المبلغ المدفوع</span><input id="inv-paid" type="number" min="0"></label>
+        <label class="field"><span>ملاحظات</span><input id="inv-notes"></label>
+        <button class="btn-primary" type="submit"><span>حفظ التعديل</span></button>
+      </form>
+      <div class="modal-actions">
+        <button class="btn-primary small" id="inv-edit-btn"><span>تعديل</span></button>
+        <button class="mini-btn" id="inv-share">مشاركة</button>
+        <button class="mini-btn danger" id="inv-delete">حذف</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
   <script src="app.js"></script>
 </body>

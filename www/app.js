@@ -236,6 +236,7 @@ async function loadSales() {
       el.querySelector(".amount").textContent = `${fmt(s.total)} ريال`;
       const remaining = Number(s.total) - Number(s.paid);
       el.querySelector(".chip").textContent = remaining > 0 ? `متبقي ${fmt(remaining)}` : "مدفوعة";
+      el.onclick = () => openInvoice(s.id);
       list.appendChild(el);
     });
   } catch (e) {
@@ -519,3 +520,113 @@ setTimeout(() => {
   if (token) showApp();
   else showLogin();
 }, 2800);
+
+// ===== تفاصيل الفاتورة: عرض، تعديل، حذف، مشاركة =====
+let currentInvoice = null;
+
+async function openInvoice(id) {
+  try {
+    currentInvoice = await api(`/api/sales/${id}`);
+    renderInvoice();
+    $("invoice-modal").classList.remove("hidden");
+    $("inv-edit").classList.add("hidden");
+    $("inv-body").classList.remove("hidden");
+  } catch (e) { toast(e.message); }
+}
+
+function invoiceText(inv) {
+  const lines = (inv.items || []).map(i => `${i.item_name} × ${i.quantity} = ${fmt(i.line_total)} ريال`);
+  return [
+    "العالم فون",
+    `فاتورة: ${inv.invoice_no}`,
+    `الزبون: ${inv.customer_name || "زبون نقدي"}`,
+    `التاريخ: ${(inv.created_at || "").slice(0, 16)}`,
+    "--------------",
+    ...lines,
+    "--------------",
+    `الإجمالي: ${fmt(inv.total)} ريال`,
+    `المدفوع: ${fmt(inv.paid)} ريال`,
+    `المتبقي: ${fmt(inv.remaining)} ريال`
+  ].join("\n");
+}
+
+function renderInvoice() {
+  const inv = currentInvoice;
+  const body = $("inv-body");
+  body.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "inv-line";
+  head.innerHTML = `<span>رقم الفاتورة</span><b></b>`;
+  head.querySelector("b").textContent = inv.invoice_no;
+  body.appendChild(head);
+  (inv.items || []).forEach(i => {
+    const row = document.createElement("div");
+    row.className = "inv-line";
+    row.innerHTML = `<span></span><b></b>`;
+    row.querySelector("span").textContent = `${i.item_name} × ${i.quantity}`;
+    row.querySelector("b").textContent = `${fmt(i.line_total)} ريال`;
+    body.appendChild(row);
+  });
+  [["الزبون", inv.customer_name || "زبون نقدي"], ["الإجمالي", `${fmt(inv.total)} ريال`], ["المدفوع", `${fmt(inv.paid)} ريال`], ["المتبقي", `${fmt(inv.remaining)} ريال`]]
+    .forEach(([k, v]) => {
+      const row = document.createElement("div");
+      row.className = "inv-line";
+      row.innerHTML = `<span></span><b></b>`;
+      row.querySelector("span").textContent = k;
+      row.querySelector("b").textContent = v;
+      body.appendChild(row);
+    });
+}
+
+$("inv-close").addEventListener("click", () => $("invoice-modal").classList.add("hidden"));
+
+$("inv-edit-btn").addEventListener("click", () => {
+  $("inv-customer").value = currentInvoice.customer_name || "";
+  $("inv-paid").value = currentInvoice.paid;
+  $("inv-notes").value = currentInvoice.notes || "";
+  $("inv-body").classList.add("hidden");
+  $("inv-edit").classList.remove("hidden");
+});
+
+$("inv-edit").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    currentInvoice = await api(`/api/sales/${currentInvoice.id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        customer_name: $("inv-customer").value.trim(),
+        paid: Number($("inv-paid").value),
+        notes: $("inv-notes").value.trim()
+      })
+    });
+    toast("تم حفظ التعديل");
+    renderInvoice();
+    $("inv-edit").classList.add("hidden");
+    $("inv-body").classList.remove("hidden");
+    loadSales();
+  } catch (err) { toast(err.message); }
+});
+
+$("inv-delete").addEventListener("click", async () => {
+  if (!confirm("هل تريد حذف هذه الفاتورة نهائياً؟")) return;
+  try {
+    await api(`/api/sales/${currentInvoice.id}`, { method: "DELETE" });
+    $("invoice-modal").classList.add("hidden");
+    toast("تم حذف الفاتورة");
+    loadSales();
+  } catch (err) { toast(err.message); }
+});
+
+$("inv-share").addEventListener("click", async () => {
+  const text = invoiceText(currentInvoice);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: currentInvoice.invoice_no, text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast("تم نسخ تفاصيل الفاتورة");
+    }
+  } catch (err) {
+    if (err && err.name !== "AbortError") toast("تعذّرت المشاركة");
+  }
+});
