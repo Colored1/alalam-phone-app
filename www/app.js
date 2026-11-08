@@ -156,6 +156,7 @@ async function loadSellForm() {
       sel.appendChild(o);
     });
     fillPriceFromType();
+    fillCalcTypes();
     renderLines();
   } catch (e) {
     toast(e.message);
@@ -684,3 +685,53 @@ $("inv-share").addEventListener("click", async () => {
     if (err && err.name !== "AbortError") toast("تعذّر تجهيز الملف: " + err.message);
   }
 });
+
+// ===== حاسبة الكروت =====
+function fillCalcTypes() {
+  const sel = $("calc-type");
+  sel.innerHTML = "";
+  cardTypes.forEach((c) => {
+    const o = document.createElement("option");
+    o.value = c.id;
+    o.textContent = `${c.name} — ${fmt(c.default_price)} ريال`;
+    sel.appendChild(o);
+  });
+}
+
+function runCalc() {
+  const amount = Number($("calc-amount").value);
+  const card = cardTypes.find((x) => String(x.id) === $("calc-type").value);
+  const box = $("calc-result");
+  if (!card || !(amount > 0)) {
+    box.innerHTML = "";
+    box.classList.add("hidden");
+    toast("اكتب المبلغ واختر الفئة");
+    return;
+  }
+  const price = Number(card.default_price);
+  if (!(price > 0)) {
+    box.innerHTML = `<p class="warn">سعر فئة ${card.name} غير محدد، حدده من صفحة الفئات أولاً</p>`;
+    box.classList.remove("hidden");
+    return;
+  }
+  const count = Math.floor(amount / price);
+  const used = count * price;
+  const leftover = amount - used;
+  box.innerHTML = `
+    <div class="big-count">${fmt(count)} كرت</div>
+    <div class="line"><span>الفئة</span><b></b></div>
+    <div class="line"><span>سعر الكرت</span><b>${fmt(price)} ريال</b></div>
+    <div class="line"><span>الإجمالي</span><b>${fmt(used)} ريال</b></div>
+    ${leftover > 0 ? `<div class="line"><span>الباقي من المبلغ</span><b>${fmt(leftover)} ريال</b></div>` : ""}
+    <button type="button" class="mini-btn" id="calc-add">إضافة ${fmt(count)} كرت للفاتورة</button>`;
+  box.querySelector(".line b").textContent = card.name;
+  box.classList.remove("hidden");
+  $("calc-add").onclick = () => {
+    if (count <= 0) { toast("المبلغ أقل من سعر كرت واحد"); return; }
+    lines.push({ id: card.id, name: card.name, quantity: count, unit_price: price });
+    renderLines();
+    toast(`أُضيف ${fmt(count)} كرت للفاتورة`);
+  };
+}
+
+$("calc-run").addEventListener("click", runCalc);

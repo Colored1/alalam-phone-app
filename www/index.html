@@ -92,6 +92,16 @@
     <!-- البيع -->
     <section class="view" data-view="sell">
       <header class="head"><h1>بيع كروت</h1></header>
+      <div class="glass calc-box">
+        <h2>حاسبة الكروت</h2>
+        <div class="row-sm-form">
+          <label class="field grow"><span>المبلغ الذي يريده الزبون</span><input id="calc-amount" type="number" min="0" placeholder="مثال: 3000"></label>
+          <label class="field grow"><span>الفئة</span><select id="calc-type"></select></label>
+        </div>
+        <button type="button" class="btn-primary" id="calc-run"><span>احسب</span></button>
+        <div id="calc-result" class="calc-result hidden"></div>
+      </div>
+
       <div class="glass sell-form">
         <div class="row-sm-form">
           <label class="field grow"><span>الفئة</span><select id="sell-type"></select></label>
